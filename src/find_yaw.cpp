@@ -22,14 +22,8 @@ private:
 
 	IplImage *source_image;
 	IplImage *source_image_resized;
-	IplImage *corners1;
-	IplImage *corners2;
 	IplImage temp;
 	IplConvKernel * myModel;
-	int cornersCount;
-	CvPoint2D32f *corners;
-	double quality_level; 
-    double min_distance;
 
 	void imageCallback(const sensor_msgs::Image &msg);
 };
@@ -38,17 +32,12 @@ FindYaw::FindYaw()
 {
 	image_sub = n.subscribe("/videofile/image_raw", 1, &FindYaw::imageCallback,this);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
-	corners1 = cvCreateImage(cvSize(640,360),IPL_DEPTH_32F, 1);
-	corners1 = cvCreateImage(cvSize(640,360),IPL_DEPTH_32F, 1);
 	myModel = cvCreateStructuringElementEx(30,30,2,2,CV_SHAPE_RECT);
-	corners = new CvPoint2D32f[50];
-	quality_level=0.05;
-	min_distance=10;
 }
 
 void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 {
-
+	float theta;
 	cv_bridge::CvImagePtr cv_ptr;
 	cv_bridge::CvImage cv_to_ros;
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -57,7 +46,6 @@ void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 	source_image = &temp;
 	cvResize(source_image, source_image_resized);
 	
-	//detect the yellow region
 	IplImage *image_threshold = cvCreateImage(cvGetSize(source_image_resized),IPL_DEPTH_8U, 1);
 
 	Color_Detection(source_image_resized, image_threshold, 0, 90, 0.1, 1, 0, 1);	
@@ -66,13 +54,40 @@ void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 	cvDilate(image_threshold, image_threshold, myModel, 1);
 	cvErode(image_threshold, image_threshold, myModel, 1);
 
+	cvCanny(image_threshold,image_threshold,200,240,3);
 
-	cvShowImage("Threshold Image", image_threshold);
-	waitKey(1);
-	cvShowImage("Origin Image", source_image_resized);
+	CvMemStorage* storage = cvCreateMemStorage(0);
+	CvSeq* lines = 0;
+	lines = cvHoughLines2(image_threshold, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 20, 120, 30);
+	float angle[lines->total];
+	float sum = 0;
+	int count = 0;
+	cvZero(image_threshold);
+	for (int i=0; i<lines->total; i++)  
+	{  
+		CvPoint *line = (CvPoint *)cvGetSeqElem(lines,i);  
+		cvLine(image_threshold,line[0],line[1],CV_RGB(255,255,255),3,CV_AA,0);  
+		angle[i] = atan2((line[0].y - line[1].y) , (line[0].x - line[1].x));
+		if(angle[i] < 0){
+			angle[i] = angle[i] + M_PI;
+		}
+		angle[i] = angle[i] - M_PI/2;
+		if((fabs(angle[i]) < M_PI/4) && (fabs(angle[i]) > 0.0001))
+		{
+			sum = sum + angle[i];
+			count++ ;
+		}
+	}
+	if(count > 0){
+		theta = -sum/count/M_PI*180;
+		ROS_INFO("Angle:%f", theta);
+	}
+	
+	cvShowImage("Origin Image", image_threshold);
 	waitKey(1);
 
 	cvReleaseImage(&image_threshold);
+	cvReleaseMemStorage(&storage);
 }
 
 

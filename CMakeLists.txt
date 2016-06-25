@@ -50,10 +50,16 @@ target_link_libraries(find_yaw_node
   image_process_lib
 )
 
-add_executable(test src/test.cpp)
-target_link_libraries(test
+add_executable(find_robot_node src/find_robot.cpp)
+target_link_libraries(find_robot_node
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   image_process_lib
 )
 
+add_executable(image_test src/test.cpp)
+target_link_libraries(image_test
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  image_process_lib
+)
