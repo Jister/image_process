@@ -230,7 +230,7 @@ bool find_circle_center(IplImage* origin_src, IplImage* src, double &x, double &
 				y = (aRect.y + aRect.y + aRect.height) / 2;
 				area = maxarea;
 				is_circle = true;
-				cvRectangle(origin_src, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(0,0,255), 3, 8, 0);
+				cvRectangle(origin_src, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(0,255,0), 3, 8, 0);
             }
         }	
 	}

@@ -12,18 +12,17 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(OpenCV REQUIRED)
 
-## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  drone_info.msg
+  robot_info.msg
+)
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 
 
 catkin_package(
@@ -56,6 +55,14 @@ target_link_libraries(find_robot_node
   ${OpenCV_LIBS}
   image_process_lib
 )
+
+add_executable(find_position src/position.cpp)
+target_link_libraries(find_position
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  image_process_lib
+)
+
 
 add_executable(image_test src/test.cpp)
 target_link_libraries(image_test

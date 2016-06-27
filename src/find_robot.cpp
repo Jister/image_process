@@ -1,13 +1,12 @@
 //Size of the image is 640*360
 #include "ros/ros.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "nav_msgs/Odometry.h"
 #include "sensor_msgs/Image.h"
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-#include "ardrone_autonomy/navdata_altitude.h"
 #include "image_process.h"
+#include "image_process/robot_info.h"
 
 using namespace cv;
 using namespace std;
@@ -19,6 +18,8 @@ public:
 private:
 	ros::NodeHandle n;
 	ros::Subscriber image_sub;
+	ros::Subscriber yaw_sub;
+	ros::Publisher robot_pub;
 
 	IplImage *source_image;
 	IplImage *source_image_resized;
@@ -37,13 +38,13 @@ private:
 FindRobot::FindRobot()
 {
 	image_sub = n.subscribe("/videofile/image_raw", 1, &FindRobot::imageCallback,this);
+	robot_pub = n.advertise<image_process::robot_info>("/ardrone/robot_info", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(3,3,2,2,CV_SHAPE_ELLIPSE);
 }
 
 void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 {
-	float theta;
 	cv_bridge::CvImagePtr cv_ptr;
 	cv_bridge::CvImage cv_to_ros;
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -58,8 +59,8 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 	cvErode(image_threshold, image_threshold, myModel, 1);
 	cvDilate(image_threshold, image_threshold, myModel, 1);
 
-	cvShowImage("Threshold Image", image_threshold);
-	waitKey(1);
+	// cvShowImage("Threshold Image", image_threshold);
+	// waitKey(1);
 
 	//find the contours
 	CvMemStorage* storage = cvCreateMemStorage(0);  
@@ -134,9 +135,16 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
      	is_black = find_circle_center(ROI_image, black_ROI, black_target[0][0], black_target[0][1], black_area);
 
      	if(is_white && is_black){
-     		ROS_INFO("Area white:%f",white_area);
-     		ROS_INFO("Area black:%f",black_area);
-     		ROS_INFO("x:%f, y:%f",white_target[0][0]-black_target[0][0], white_target[0][1]-black_target[0][1]);
+     		float theta;
+			image_process::robot_info msg;
+     		theta = atan2(white_target[0][0]-black_target[0][0], white_target[0][1]-black_target[0][1]);
+     		theta = 180 + theta/M_PI*180;
+     		if(theta > 180) theta = theta - 360;
+     		msg.pose.x = target_image[0][0];
+     		msg.pose.y = target_image[0][1];
+     		msg.pose.theta = theta;
+     		robot_pub.publish(msg);
+     		ROS_INFO("Theta:%f",theta);
      	}
 
      	cvShowImage("ROI Image", ROI_image);

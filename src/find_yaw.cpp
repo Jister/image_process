@@ -1,12 +1,10 @@
 //Size of the image is 640*360
 #include "ros/ros.h"
-#include "geometry_msgs/PoseStamped.h"
-#include "nav_msgs/Odometry.h"
 #include "sensor_msgs/Image.h"
+#include "std_msgs/Float32.h"
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
-#include "ardrone_autonomy/navdata_altitude.h"
 #include "image_process.h"
 
 using namespace cv;
@@ -19,6 +17,7 @@ public:
 private:
 	ros::NodeHandle n;
 	ros::Subscriber image_sub;
+	ros::Publisher drone_pub;
 
 	IplImage *source_image;
 	IplImage *source_image_resized;
@@ -31,6 +30,7 @@ private:
 FindYaw::FindYaw()
 {
 	image_sub = n.subscribe("/videofile/image_raw", 1, &FindYaw::imageCallback,this);
+	drone_pub = n.advertise<std_msgs::Float32>("/ardrone/yaw", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(30,30,2,2,CV_SHAPE_RECT);
 }
@@ -48,9 +48,8 @@ void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 	
 	IplImage *image_threshold = cvCreateImage(cvGetSize(source_image_resized),IPL_DEPTH_8U, 1);
 
-	Color_Detection(source_image_resized, image_threshold, 0, 90, 0.1, 1, 0, 1);	
+	Color_Detection(source_image_resized, image_threshold, 0, 90, 0.1, 1, 0, 255);	
 	//cvCopy(image_threshold,image_threshold_origin);
-
 	cvDilate(image_threshold, image_threshold, myModel, 1);
 	cvErode(image_threshold, image_threshold, myModel, 1);
 
@@ -79,12 +78,14 @@ void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 		}
 	}
 	if(count > 0){
+		std_msgs::Float32 msg;
 		theta = -sum/count/M_PI*180;
+		msg.data = theta;
+		drone_pub.publish(msg);
 		ROS_INFO("Angle:%f", theta);
-	}
-	
-	cvShowImage("Origin Image", image_threshold);
-	waitKey(1);
+	}	
+	// cvShowImage("Origin Image", image_threshold);
+	// waitKey(1);
 
 	cvReleaseImage(&image_threshold);
 	cvReleaseMemStorage(&storage);

@@ -49,33 +49,44 @@ void Test::imageCallback(const sensor_msgs::Image &msg)
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "image_test");
-	IplImage *image = cvLoadImage("/home/chenjie/Desktop/1.png");
-	IplImage *src_float = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F, 3);
-	cvConvertScale(image, src_float, 1.0, 0.0);
-	IplImage *hsv_img = cvCreateImage(cvGetSize(image), IPL_DEPTH_32F , 3);
-	cvCvtColor(src_float, hsv_img, CV_BGR2HSV);
-	int step = hsv_img->widthStep/sizeof(float);
-	int channels = hsv_img->nChannels;
-	float * datafloat = (float *)hsv_img->imageData;
-	float max_V = 0;
-	float max_H = 0;
-	float max_S = 0;
-	for(int i = 0; i < hsv_img->height; i++)
-	{
-		for(int j = 0; j < hsv_img->width; j++)
-		{
-			printf("H:%f\n", datafloat[i*step + j*channels]);
-			printf("S:%f\n", datafloat[i*step + j*channels + 1]);
-			printf("V:%f\n", datafloat[i*step + j*channels + 2]);
-			if(datafloat[i*step + j*channels + 2]>max_V) max_V=datafloat[i*step + j*channels + 2];
-			if(datafloat[i*step + j*channels + 1]>max_S) max_S=datafloat[i*step + j*channels + 1];
-			if(datafloat[i*step + j*channels]>max_H) max_H=datafloat[i*step + j*channels];
-		}
+	int cornersCount=50;//得到的角点数目
+	CvPoint2D32f corners[50];//输出角点集合
+	IplImage *image = cvLoadImage("/home/chenjie/catkin_ws/src/image_process/image/calibration3.jpg");
+	cvSmooth(image,image,CV_MEDIAN,5,5);
+	IplImage *grayImage = cvCreateImage(cvGetSize(image),IPL_DEPTH_8U,1);
+	IplImage *corners1 = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F,1);
+	IplImage *corners2 = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F,1);
+	cvCvtColor(image,grayImage,CV_BGR2GRAY);
+	cvThreshold(grayImage,grayImage,120,255,CV_THRESH_BINARY);
+	cvShowImage("Threshold",grayImage);
+
+	CvRect rect;
+	rect.x = 200;
+	rect.y = 50;
+	rect.width = 200;
+	rect.height = 200;
+	IplImage *ROI_image = cvCreateImage(cvSize(200, 200), IPL_DEPTH_8U, 1);
+	//get the ROI region
+	cvSetImageROI(grayImage,rect);
+	cvCopy(grayImage,ROI_image);  
+	cvResetImageROI(grayImage); 
+
+	cvCanny(ROI_image,ROI_image,200,240,3);
+	CvMemStorage* storage = cvCreateMemStorage(0);
+	CvSeq* lines = 0;
+	lines = cvHoughLines2(ROI_image, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 5, 20, 50);
+	float angle[lines->total];
+	float sum = 0;
+	int count = 0;
+	for (int i=0; i<lines->total; i++)  
+	{  
+		CvPoint *line = (CvPoint *)cvGetSeqElem(lines,i);  
+		cvLine(ROI_image,line[0],line[1],CV_RGB(255,255,255),3,CV_AA,0);  
 	}
-	printf("H:%f\n", max_H);
-	printf("S:%f\n", max_S);
-	printf("V:%f\n", max_V);
-	cvReleaseImage(&hsv_img);
-	cvReleaseImage(&src_float);
+
+
+	cvShowImage("image",ROI_image);
+	waitKey(0);
+
 	ros::spin();
 }
