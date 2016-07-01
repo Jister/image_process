@@ -29,7 +29,7 @@ private:
 
 FindYaw::FindYaw()
 {
-	image_sub = n.subscribe("/videofile/image_raw", 1, &FindYaw::imageCallback,this);
+	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindYaw::imageCallback,this);
 	drone_pub = n.advertise<std_msgs::Float32>("/ardrone/yaw", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(30,30,2,2,CV_SHAPE_RECT);
@@ -79,7 +79,7 @@ void FindYaw::imageCallback(const sensor_msgs::Image &msg)
 	}
 	if(count > 0){
 		std_msgs::Float32 msg;
-		theta = -sum/count/M_PI*180;
+		theta = sum/count/M_PI*180;
 		msg.data = theta;
 		drone_pub.publish(msg);
 		ROS_INFO("Angle:%f", theta);

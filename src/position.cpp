@@ -44,7 +44,7 @@ private:
 
 FindPosition::FindPosition()
 {
-	image_sub = n.subscribe("/videofile/image_raw", 1, &FindPosition::imageCallback,this);
+	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindPosition::imageCallback,this);
 	altitude_sub = n.subscribe("/ardrone/navdata_altitude", 1, &FindPosition::altitudeCallback,this);
 	yaw_sub = n.subscribe("/ardrone/yaw", 1, &FindPosition::yawCallback,this);
 	drone_pub = n.advertise<image_process::drone_info>("/ardrone/drone_info", 1);
@@ -111,8 +111,8 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 		pos(0) = (pixel_y - 180) / ratio;
 		pos(1) = (pixel_x - 320) / ratio;
 		pos_field = R_body * pos;
-		msg.pose.x = pos_field(0);
-		msg.pose.y = pos_field(1);
+		msg.pose.x = pos_field(0)/1000;
+		msg.pose.y = pos_field(1)/1000;
 		msg.pose.theta = yaw;
 		drone_pub.publish(msg);
 		ROS_INFO("x:%f, y:%f, theta:%f",msg.pose.x,msg.pose.y,msg.pose.theta);
