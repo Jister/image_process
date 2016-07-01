@@ -22,8 +22,8 @@ public:
 private:
 	ros::NodeHandle n;
 	ros::Subscriber image_sub;
-	ros::Subscriber altitude_sub;
-	ros::Subscriber yaw_sub;
+	// ros::Subscriber altitude_sub;
+	// ros::Subscriber yaw_sub;
 	ros::Publisher drone_pub;
 
 	IplImage *source_image;
@@ -34,47 +34,47 @@ private:
 	float yaw;
 	Matrix<float, 3, 3> R_body;
 	Vector3f pos;
-	Vector3f pos_field;
+//	Vector3f pos_field;
 
 	void imageCallback(const sensor_msgs::Image &msg);
-	void altitudeCallback(const ardrone_autonomy::navdata_altitude &msg);
-	void yawCallback(const std_msgs::Float32 &msg);
-	void get_R_body(float yaw);
+	// void altitudeCallback(const ardrone_autonomy::navdata_altitude &msg);
+	// void yawCallback(const std_msgs::Float32 &msg);
+	// void get_R_body(float yaw);
 };
 
 FindPosition::FindPosition()
 {
 	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindPosition::imageCallback,this);
-	altitude_sub = n.subscribe("/ardrone/navdata_altitude", 1, &FindPosition::altitudeCallback,this);
-	yaw_sub = n.subscribe("/ardrone/yaw", 1, &FindPosition::yawCallback,this);
-	drone_pub = n.advertise<image_process::drone_info>("/ardrone/drone_info", 1);
+	// altitude_sub = n.subscribe("/ardrone/navdata_altitude", 1, &FindPosition::altitudeCallback,this);
+	// yaw_sub = n.subscribe("/ardrone/yaw", 1, &FindPosition::yawCallback,this);
+	drone_pub = n.advertise<image_process::drone_info>("/ardrone/position_reset_info", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(10,10,2,2,CV_SHAPE_ELLIPSE);
 }
 
-void FindPosition::altitudeCallback(const ardrone_autonomy::navdata_altitude &msg)
-{
-	distance = msg.altitude_vision/1000.0;
-}
+// void FindPosition::altitudeCallback(const ardrone_autonomy::navdata_altitude &msg)
+// {
+// 	distance = msg.altitude_vision/1000.0;
+// }
 
-void FindPosition::yawCallback(const std_msgs::Float32 &msg)
-{
-	yaw = msg.data;
-	get_R_body(yaw/57.3);
-}
+// void FindPosition::yawCallback(const std_msgs::Float32 &msg)
+// {
+// 	yaw = msg.data;
+// 	get_R_body(yaw/57.3);
+// }
 
-void FindPosition::get_R_body(float yaw)
-{
-	R_body(0,0) = cos(yaw);
-	R_body(0,1) = sin(-yaw);
-	R_body(0,2) = 0;
-	R_body(1,0) = sin(yaw);
-	R_body(1,1) = cos(yaw);
-	R_body(1,2) = 0;
-	R_body(2,0) = 0;
-	R_body(2,1) = 0;
-	R_body(2,2) = 1;
-}
+// void FindPosition::get_R_body(float yaw)
+// {
+// 	R_body(0,0) = cos(yaw);
+// 	R_body(0,1) = sin(-yaw);
+// 	R_body(0,2) = 0;
+// 	R_body(1,0) = sin(yaw);
+// 	R_body(1,1) = cos(yaw);
+// 	R_body(1,2) = 0;
+// 	R_body(2,0) = 0;
+// 	R_body(2,1) = 0;
+// 	R_body(2,2) = 1;
+// }
 
 void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 {
@@ -104,18 +104,18 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 	//ratio = pixel/real
 	//ratio = -0.7196*d + 1.4297
 
-	if(is_origin)
+	if(is_origin && (area > 5000))
 	{
 		image_process::drone_info msg;
-		float ratio = -0.7196 * distance + 1.4297;
-		pos(0) = (pixel_y - 180) / ratio;
-		pos(1) = (pixel_x - 320) / ratio;
-		pos_field = R_body * pos;
-		msg.pose.x = pos_field(0)/1000;
-		msg.pose.y = pos_field(1)/1000;
-		msg.pose.theta = yaw;
+		// float ratio = -0.7196 * distance + 1.4297;
+		// pos(0) = (pixel_y - 180) / ratio;
+		// pos(1) = (pixel_x - 320) / ratio;
+		// pos_field = R_body * pos;
+		msg.pose.x = pixel_x;
+		msg.pose.y = pixel_y;
+		// msg.pose.theta = yaw;
 		drone_pub.publish(msg);
-		ROS_INFO("x:%f, y:%f, theta:%f",msg.pose.x,msg.pose.y,msg.pose.theta);
+		ROS_INFO("x:%f, y:%f",msg.pose.x,msg.pose.y);
 	}
 }
 
