@@ -16,6 +16,7 @@ add_message_files(
   FILES
   drone_info.msg
   robot_info.msg
+  boundary_info.msg
 )
 
 generate_messages(

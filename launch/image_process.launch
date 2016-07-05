@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!-- This is a sample lanuch file, please change it based on your needs -->
+<launch>
+    <node name="find_yaw_node" pkg="image_process" type="find_yaw_node" output="screen"/>
+    <node name="find_robot_node" pkg="image_process" type="find_robot_node" output="screen"/>
+    <node name="find_position" pkg="image_process" type="find_position" output="screen"/>
+</launch>

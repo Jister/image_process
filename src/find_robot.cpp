@@ -37,7 +37,7 @@ private:
 
 FindRobot::FindRobot()
 {
-	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindRobot::imageCallback,this);
+	image_sub = n.subscribe("/videofile/image_raw", 1, &FindRobot::imageCallback,this);
 	robot_pub = n.advertise<image_process::robot_info>("/ardrone/robot_info", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(3,3,2,2,CV_SHAPE_ELLIPSE);
@@ -45,6 +45,8 @@ FindRobot::FindRobot()
 
 void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 {
+	bool find_robot = false;
+	image_process::robot_info robot_msg;
 	cv_bridge::CvImagePtr cv_ptr;
 	cv_bridge::CvImage cv_to_ros;
 	cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
@@ -59,15 +61,29 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 	cvErode(image_threshold, image_threshold, myModel, 1);
 	cvDilate(image_threshold, image_threshold, myModel, 1);
 
-	// cvShowImage("Threshold Image", image_threshold);
-	// waitKey(1);
-
 	//find the contours
 	CvMemStorage* storage = cvCreateMemStorage(0);  
 	CvSeq* contour = 0;  
 	cvFindContours(image_threshold, storage, &contour, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 	cvZero(image_threshold);
+	CvSeq* _contour = contour;
+	
 
+	for( ; contour != 0; contour = contour->h_next )
+	{  
+		double tmparea = fabs(cvContourArea(contour));  
+	 	if (tmparea < 1000)  
+	 	{  
+	 		continue; 
+	 	}
+		CvRect aRect = cvBoundingRect(contour, 0 );
+		cvRectangle(source_image_resized, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(255,255,0), 3, 8, 0);
+		find_robot = true;
+ 		robot_msg.pose.x = (aRect.x + aRect.x + aRect.width) / 2;
+ 		robot_msg.pose.y = (aRect.y + aRect.y + aRect.height) / 2;
+	}
+
+	contour = _contour;
 	//get rid of the contours which don't meet the requirement
 	int count = 0; 
 	for( ; contour != 0; contour = contour->h_next )
@@ -93,14 +109,14 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 		}
 		
 		//draw the contours
-		cvDrawContours(image_threshold, contour, CV_RGB( 255, 255, 255), CV_RGB( 255, 255, 255), 0, 1, 8 );
+		//cvDrawContours(image_threshold, contour, CV_RGB( 255, 255, 255), CV_RGB( 255, 255, 255), 0, 1, 8 );
 		//find the center of the contours
 		target_image[count][0] = (aRect.x + aRect.x + aRect.width) / 2;
 		target_image[count][1] = (aRect.y + aRect.y + aRect.height) / 2;
 		ROI_width = aRect.width;
 		ROI_height = aRect.height;
 		//draw a rectangle of the contour region
-		cvRectangle(image_threshold, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(255,255, 255), 1, 8, 0);
+		//cvRectangle(image_threshold, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(255,255, 255), 1, 8, 0);
 		cvRectangle(source_image_resized, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(0,255, 0), 3, 8, 0);
 		
 		count++;		
@@ -136,15 +152,12 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 
      	if(is_white && is_black){
      		float theta;
-			image_process::robot_info msg;
      		theta = atan2(white_target[0][0]-black_target[0][0], white_target[0][1]-black_target[0][1]);
      		theta = 180 + theta/M_PI*180;
      		if(theta > 180) theta = theta - 360;
-     		msg.pose.x = target_image[0][0];
-     		msg.pose.y = target_image[0][1];
-     		msg.pose.theta = theta;
-     		robot_pub.publish(msg);
-     		ROS_INFO("Theta:%f",theta);
+     		robot_msg.whole = true;
+     		robot_msg.pose.theta = theta;
+     		//ROS_INFO("Theta:%f",theta);
      	}
 
      	cvShowImage("ROI Image", ROI_image);
@@ -153,8 +166,15 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 		cvReleaseImage(&gray_ROI);
 		cvReleaseImage(&white_ROI);
 		cvReleaseImage(&black_ROI);
+	}else{
+		robot_msg.whole = false;
+     	robot_msg.pose.theta = 0;
 	}
-	
+
+	if(find_robot){
+		robot_pub.publish(robot_msg);
+	}
+
 	cvShowImage("Origin Image", source_image_resized);
 	waitKey(1);
 	

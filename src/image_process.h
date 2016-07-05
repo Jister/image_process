@@ -16,5 +16,6 @@ void edge_extracting(IplImage* src, IplImage* dst);
 void edge_direction_extracting(IplImage* src, IplImage* dst, float theta);
 float find_center(IplImage* src, double &x, double &y);
 bool find_circle_center(IplImage* origin_src, IplImage* src, double &x, double &y, double &area);
+bool find_boundary(IplImage* origin_src, IplImage* src, double &x, double &y);
 
 #endif

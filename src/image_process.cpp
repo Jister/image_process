@@ -243,3 +243,51 @@ bool find_circle_center(IplImage* origin_src, IplImage* src, double &x, double &
 		return false;
 	}
 }
+
+bool find_boundary(IplImage* origin_src, IplImage* src, double &x, double &y)
+{
+	double h_x = 0;
+	double h_y = 0;
+	double v_x = 0;
+	double v_y = 0;
+	int count_x = 0;
+	int count_y = 0;
+
+	cvCanny(src,src,200,240,3);
+	CvMemStorage* storage = cvCreateMemStorage(0);
+	CvSeq* lines = 0;
+	lines = cvHoughLines2(src, storage, CV_HOUGH_PROBABILISTIC, 1, CV_PI/180, 20, 200, 60);
+	for (int i=0; i<lines->total; i++)  
+	{  
+		CvPoint *line = (CvPoint *)cvGetSeqElem(lines,i);  
+		cvLine(origin_src,line[0],line[1],CV_RGB(255,255,255),3,CV_AA,0);  
+		if(fabs(line[0].x - line[1].x) > fabs(line[0].y - line[1].y))
+		{
+			h_y += line[0].y + line[1].y;
+			count_y += 2;
+		}else
+		{
+			v_x += line[0].x + line[1].x;
+			count_x += 2;
+		}
+	}
+	if(count_x > 0){
+		v_x = v_x / count_x;
+		x = v_x;
+	}else{
+		x = 0;
+	}
+	if(count_y > 0){
+		h_y = h_y / count_y;
+		y = h_y;
+	}else{
+		y = 0;
+	}
+	cvReleaseMemStorage(&storage);
+	if(count_x > 0 || count_y > 0)
+	{
+		return true;
+	}else{
+		return false;
+	}
+}
