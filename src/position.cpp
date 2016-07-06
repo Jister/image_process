@@ -47,7 +47,7 @@ private:
 
 FindPosition::FindPosition()
 {
-	image_sub = n.subscribe("/videofile/image_raw", 1, &FindPosition::imageCallback,this);
+	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindPosition::imageCallback,this);
 	// altitude_sub = n.subscribe("/ardrone/navdata_altitude", 1, &FindPosition::altitudeCallback,this);
 	// yaw_sub = n.subscribe("/ardrone/yaw", 1, &FindPosition::yawCallback,this);
 	drone_pub = n.advertise<image_process::drone_info>("/ardrone/position_reset_info", 1);

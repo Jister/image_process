@@ -29,15 +29,15 @@ private:
 	double target_image[10][2];
 	double white_target[1][2];
 	double black_target[1][2];
-	int ROI_width;
-	int ROI_height;
+	int ROI_width[10];
+	int ROI_height[10];
 
 	void imageCallback(const sensor_msgs::Image &msg);
 };
 
 FindRobot::FindRobot()
 {
-	image_sub = n.subscribe("/videofile/image_raw", 1, &FindRobot::imageCallback,this);
+	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindRobot::imageCallback,this);
 	robot_pub = n.advertise<image_process::robot_info>("/ardrone/robot_info", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(3,3,2,2,CV_SHAPE_ELLIPSE);
@@ -113,8 +113,8 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 		//find the center of the contours
 		target_image[count][0] = (aRect.x + aRect.x + aRect.width) / 2;
 		target_image[count][1] = (aRect.y + aRect.y + aRect.height) / 2;
-		ROI_width = aRect.width;
-		ROI_height = aRect.height;
+		ROI_width[count] = aRect.width;
+		ROI_height[count] = aRect.height;
 		//draw a rectangle of the contour region
 		//cvRectangle(image_threshold, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(255,255, 255), 1, 8, 0);
 		cvRectangle(source_image_resized, cvPoint(aRect.x, aRect.y), cvPoint(aRect.x + aRect.width, aRect.y + aRect.height),CV_RGB(0,255, 0), 3, 8, 0);
@@ -124,11 +124,11 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
 
 	if(count > 0){
 		CvRect rect;
-		rect.x = target_image[0][0] - ROI_width/2;
-		rect.y = target_image[0][1] - ROI_height/2;
-		rect.width = ROI_width;
-		rect.height = ROI_height;
-		ROI_image = cvCreateImage(cvSize(ROI_width, ROI_height), IPL_DEPTH_8U, 3);
+		rect.x = target_image[0][0] - ROI_width[0]/2;
+		rect.y = target_image[0][1] - ROI_height[0]/2;
+		rect.width = ROI_width[0];
+		rect.height = ROI_height[0];
+		ROI_image = cvCreateImage(cvSize(ROI_width[0], ROI_height[0]), IPL_DEPTH_8U, 3);
 		//get the ROI region
 		cvSetImageROI(source_image_resized,rect);
 		cvCopy(source_image_resized,ROI_image);  
