@@ -224,7 +224,7 @@ bool find_circle_center(IplImage* origin_src, IplImage* src, double &x, double &
             CvRect aRect = cvBoundingRect(contour, 0 );
             double width = aRect.width;
             double height = aRect.height;
-            if(width/height > 0.9 && height/width > 0.9)
+            if(width/height > 0.7 && height/width > 0.7)
             {
             	x = (aRect.x + aRect.x + aRect.width) / 2;
 				y = (aRect.y + aRect.y + aRect.height) / 2;

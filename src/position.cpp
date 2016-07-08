@@ -105,12 +105,13 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 
 	is_origin = find_circle_center(source_image_resized, image_threshold, pixel_x, pixel_y, area);
 	//ROS_INFO("area: %f", area);
-	if(is_origin && (area > 1000))
+	if(is_origin && (area > 1000) && (area < 60000))
 	{
 		image_process::drone_info msg;
 		msg.pose.x = pixel_x;
 		msg.pose.y = pixel_y;
 		drone_pub.publish(msg);
+		ROS_INFO("FIND CIRCLE");
 	}
 	cvShowImage("Circle Image", source_image_resized);
 	waitKey(1);
