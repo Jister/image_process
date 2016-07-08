@@ -97,7 +97,7 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 	IplImage *image_threshold = cvCreateImage(cvGetSize(source_image_resized),IPL_DEPTH_8U, 1);
 	IplImage *image_threshold_2 = cvCreateImage(cvGetSize(source_image_resized),IPL_DEPTH_8U, 1);
 
-	Color_Detection(source_image_resized, image_threshold, 215, 255, 0.95, 1, 40, 255);	
+	Color_Detection(source_image_resized, image_threshold, 215, 255, 0.9, 1, 40, 255);	
 	cvErode(image_threshold, image_threshold, myModel, 1);
 	//cvDilate(image_threshold, image_threshold, myModel, 1);
 	cvCopy(image_threshold, image_threshold_2, NULL);
@@ -112,6 +112,8 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 		msg.pose.y = pixel_y;
 		drone_pub.publish(msg);
 	}
+	cvShowImage("Circle Image", source_image_resized);
+	waitKey(1);
 
 	//Find the boundary
 	is_boundary = find_boundary(source_image_resized, image_threshold_2, boundary_x, boundary_y);
@@ -130,8 +132,9 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 		boundary_pub.publish(boundary_msg);
 	}
 	
-	cvShowImage("Line Image", source_image_resized);
-	waitKey(1);
+	// cvShowImage("Line Image", source_image_resized);
+	// waitKey(1);
+
 	cvReleaseImage(&image_threshold);
 	cvReleaseImage(&image_threshold_2);
 }
