@@ -141,7 +141,7 @@ void FindRobot::imageCallback(const sensor_msgs::Image &msg)
      	cvSmooth(gray_ROI,gray_ROI,CV_MEDIAN,5,5);
 
      	cvThreshold(gray_ROI,white_ROI,190,255,CV_THRESH_BINARY);
-     	cvThreshold(gray_ROI,black_ROI,3,255,CV_THRESH_BINARY_INV);
+     	cvThreshold(gray_ROI,black_ROI,5,255,CV_THRESH_BINARY_INV);
 
      	bool is_white = false;
      	bool is_black = false;
