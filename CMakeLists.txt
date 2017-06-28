@@ -39,6 +39,8 @@ include_directories(
   include
 )
 
+link_directories(lib)
+
 add_library(image_process_lib
   src/image_process.cpp 
 )
@@ -71,3 +73,12 @@ target_link_libraries(image_test
   ${OpenCV_LIBS}
   image_process_lib
 )
+
+add_executable(attitude_correct src/attitude_correct.cpp)
+target_link_libraries(attitude_correct
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  image_process_lib
+  libxl.so
+)
+

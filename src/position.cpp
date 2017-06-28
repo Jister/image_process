@@ -47,7 +47,7 @@ private:
 
 FindPosition::FindPosition()
 {
-	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindPosition::imageCallback,this);
+	image_sub = n.subscribe("/videofile/image_raw", 1, &FindPosition::imageCallback,this);
 	// altitude_sub = n.subscribe("/ardrone/navdata_altitude", 1, &FindPosition::altitudeCallback,this);
 	// yaw_sub = n.subscribe("/ardrone/yaw", 1, &FindPosition::yawCallback,this);
 	drone_pub = n.advertise<image_process::drone_info>("/ardrone/position_reset_info", 1);
@@ -113,8 +113,7 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 		drone_pub.publish(msg);
 		ROS_INFO("FIND CIRCLE");
 	}
-	cvShowImage("Circle Image", source_image_resized);
-	waitKey(1);
+	
 
 	//Find the boundary
 	is_boundary = find_boundary(source_image_resized, image_threshold_2, boundary_x, boundary_y);
@@ -132,7 +131,8 @@ void FindPosition::imageCallback(const sensor_msgs::Image &msg)
 		boundary_msg.y = 0;
 		boundary_pub.publish(boundary_msg);
 	}
-	
+	cvShowImage("boundary Image", source_image_resized);
+	waitKey(1);
 	// cvShowImage("Line Image", source_image_resized);
 	// waitKey(1);
 

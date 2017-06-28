@@ -37,7 +37,7 @@ private:
 
 FindRobot::FindRobot()
 {
-	image_sub = n.subscribe("/ardrone/image_raw", 1, &FindRobot::imageCallback,this);
+	image_sub = n.subscribe("/videofile/image_raw", 1, &FindRobot::imageCallback,this);
 	robot_pub = n.advertise<image_process::robot_info>("/ardrone/robot_info", 1);
 	source_image_resized = cvCreateImage(cvSize(640,360),IPL_DEPTH_8U, 3);
 	myModel = cvCreateStructuringElementEx(3,3,2,2,CV_SHAPE_ELLIPSE);
