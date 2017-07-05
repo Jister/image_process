@@ -39,6 +39,8 @@ include_directories(
   include
 )
 
+link_directories(lib)
+
 add_library(image_process_lib
   src/image_process.cpp 
 )
@@ -78,5 +80,10 @@ target_link_libraries(attitude_correct
   ${OpenCV_LIBS}
   image_process_lib
   libxl.so
+)
+
+add_executable(yaw_estimation src/yaw_estimation.cpp)
+target_link_libraries(yaw_estimation
+  ${catkin_LIBRARIES}
 )
 

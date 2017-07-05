@@ -82,3 +82,8 @@ target_link_libraries(attitude_correct
   libxl.so
 )
 
+add_executable(yaw_estimation src/yaw_estimation.cpp)
+target_link_libraries(yaw_estimation
+  ${catkin_LIBRARIES}
+)
+
